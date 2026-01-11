@@ -4,20 +4,9 @@
   "version": "1.0.0",
   "description": "Execute competitive programming problems locally with instant feedback. Supports Codeforces, LeetCode, AtCoder, and more.",
   "author": "Ayush Tiwari",
-  
-  "icons": {
-    "16": "icons/icon16.png",
-    "48": "icons/icon48.png",
-    "128": "icons/icon128.png"
-  },
 
   "action": {
     "default_popup": "popup/popup.html",
-    "default_icon": {
-      "16": "icons/icon16.png",
-      "48": "icons/icon48.png",
-      "128": "icons/icon128.png"
-    },
     "default_title": "CP Judge Local"
   },
 
@@ -72,13 +61,6 @@
     "*://*.leetcode.com/*",
     "*://*.atcoder.jp/*",
     "*://*.codechef.com/*"
-  ],
-
-  "web_accessible_resources": [
-    {
-      "resources": ["icons/*"],
-      "matches": ["<all_urls>"]
-    }
   ],
 
   "options_page": "options/options.html",
