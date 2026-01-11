@@ -6,7 +6,7 @@
  * - Pass input via stdin
  * - Capture stdout and stderr
  * - Enforce timeout
- * - Return execution result per test case
+ * - Return execution result per test case with precise timing
  */
 
 import { executeWithTimeout, parseCommand } from '../utils/timeout.js';
@@ -19,7 +19,7 @@ import path from 'path';
  * @param {string} sourceFileName - Name of source file
  * @param {string} input - Test case input
  * @param {number} timeLimit - Time limit in milliseconds
- * @returns {Promise<object>} Execution result
+ * @returns {Promise<object>} Execution result with precise timing
  */
 export async function runProgram(langConfig, workspacePath, sourceFileName, input, timeLimit = 2000) {
   // Build run command
@@ -42,13 +42,16 @@ export async function runProgram(langConfig, workspacePath, sourceFileName, inpu
 
   console.log(`[RUN] Executing: ${runCommand}`);
   console.log(`[RUN] Input length: ${input.length} chars`);
+  console.log(`[RUN] Time limit: ${timeLimit}ms`);
 
-  // Execute program
+  // Execute program with precise timing
   const result = await executeWithTimeout(command, args, {
     cwd: workspacePath,
     timeout: timeLimit,
     input: input
   });
+
+  console.log(`[RUN] Execution completed in ${result.executionTime}ms`);
 
   return {
     stdout: result.stdout,
@@ -56,6 +59,6 @@ export async function runProgram(langConfig, workspacePath, sourceFileName, inpu
     exitCode: result.exitCode,
     timedOut: result.timedOut,
     killed: result.killed,
-    executionTime: timeLimit - (result.timedOut ? 0 : timeLimit) // Approximate
+    executionTime: result.executionTime // Precise measurement from timeout module
   };
 }
