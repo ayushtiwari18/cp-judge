@@ -6,20 +6,23 @@
  * - Pass input via stdin
  * - Capture stdout and stderr
  * - Enforce timeout
- * - Return execution result per test case with precise timing
+ * - Track memory usage
+ * - Return execution result with metrics
  */
 
 import { executeWithTimeout, parseCommand } from '../utils/timeout.js';
+import { ExecutionMetrics } from '../utils/metrics.js';
+import { debug } from '../utils/logger.js';
 import path from 'path';
 
 /**
- * Run program with input
+ * Run program with input and track metrics
  * @param {object} langConfig - Language configuration object
  * @param {string} workspacePath - Workspace directory path
  * @param {string} sourceFileName - Name of source file
  * @param {string} input - Test case input
  * @param {number} timeLimit - Time limit in milliseconds
- * @returns {Promise<object>} Execution result with precise timing
+ * @returns {Promise<object>} Execution result with metrics
  */
 export async function runProgram(langConfig, workspacePath, sourceFileName, input, timeLimit = 2000) {
   // Build run command
@@ -40,18 +43,26 @@ export async function runProgram(langConfig, workspacePath, sourceFileName, inpu
 
   const { command, args } = parseCommand(runCommand);
 
-  console.log(`[RUN] Executing: ${runCommand}`);
-  console.log(`[RUN] Input length: ${input.length} chars`);
-  console.log(`[RUN] Time limit: ${timeLimit}ms`);
+  debug(`Executing: ${runCommand}`);
+  debug(`Input length: ${input.length} chars`);
+  debug(`Time limit: ${timeLimit}ms`);
 
-  // Execute program with precise timing
+  // Start metrics tracking
+  const metrics = new ExecutionMetrics();
+  metrics.start();
+
+  // Execute program
   const result = await executeWithTimeout(command, args, {
     cwd: workspacePath,
     timeout: timeLimit,
     input: input
   });
 
-  console.log(`[RUN] Execution completed in ${result.executionTime}ms`);
+  // Stop metrics and get statistics
+  const executionMetrics = metrics.stop();
+
+  debug(`Execution completed in ${result.executionTime}ms`);
+  debug(`Peak memory: ${executionMetrics.memory.peak}MB`);
 
   return {
     stdout: result.stdout,
@@ -59,6 +70,11 @@ export async function runProgram(langConfig, workspacePath, sourceFileName, inpu
     exitCode: result.exitCode,
     timedOut: result.timedOut,
     killed: result.killed,
-    executionTime: result.executionTime // Precise measurement from timeout module
+    executionTime: result.executionTime,
+    memory: {
+      peak: executionMetrics.memory.peak,
+      average: executionMetrics.memory.average,
+      unit: 'MB'
+    }
   };
 }
