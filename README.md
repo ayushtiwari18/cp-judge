@@ -14,6 +14,8 @@ A CPH-style execution engine that runs competitive programming code locally with
 ✅ **Deterministic Verdicts** - AC, WA, TLE, RE, CE  
 ✅ **Isolated Execution** - Separate workspace per request  
 ✅ **Timeout Enforcement** - Configurable time limits  
+✅ **Precise Timing** - High-resolution execution measurement  
+✅ **Strict Output Comparison** - Case-sensitive CP-standard matching  
 ✅ **HTTP API** - Easy integration with extensions  
 ✅ **No Network Required** - Fully local execution  
 ✅ **Cross-Platform** - Linux, macOS, Windows  
@@ -190,23 +192,100 @@ cp-judge/
 
 ## Security
 
-**⚠️ WARNING: This judge executes arbitrary code.**
+**⚠️ CRITICAL WARNING: This judge executes arbitrary code on your system.**
+
+### Security Model
+
+This is a **local development tool** designed for trusted environments. It is **NOT** a secure online judge.
 
 ### Current Safety Measures
-- Isolated workspaces per request
-- Timeout enforcement
-- Process killing on overrun
-- Separate execution directories
+- ✅ Isolated workspaces per request (UUID-based)
+- ✅ Timeout enforcement with forced process termination
+- ✅ Process killing on overrun (SIGKILL)
+- ✅ Separate execution directories
+- ✅ Automatic workspace cleanup
 
-### Known Limitations
-- **No sandbox**: Code runs with user privileges
-- **No network isolation**: Code can access network
-- **No resource limits**: CPU/memory not constrained
+### Known Security Limitations
+
+**❌ No Sandbox**: Code runs with **your user privileges**
+- Can read/write any files you have access to
+- Can execute system commands
+- Can access network resources
+- Can consume unlimited CPU/memory
+
+**❌ No Network Isolation**: Code has full network access
+- Can make HTTP requests
+- Can open sockets
+- Can connect to databases
+
+**❌ No Resource Limits**: 
+- CPU usage not constrained
+- Memory usage not constrained
+- Disk usage not constrained
+
+**⚠️ Shell Command Execution**: Uses `shell: true` for process spawning
+- Required for language command templates
+- Potential command injection risk with untrusted input
+
+### Security Best Practices
+
+**✅ SAFE Use Cases**:
+- Personal competitive programming practice
+- Solving problems from trusted sources (Codeforces, LeetCode)
+- Testing your own code locally
+- Educational environments with trusted students
+
+**❌ UNSAFE Use Cases**:
+- Public-facing online judge
+- Multi-tenant environments
+- Untrusted code execution
+- Production web services
 
 ### Recommendations
-- **DO NOT** expose to public internet
-- **USE ONLY** for personal/trusted code
-- **CONSIDER** Docker/containerization for production
+
+1. **Local Use Only**: Never expose port 3000 to the internet
+2. **Trusted Code Only**: Only run code you wrote or trust
+3. **Firewall Protection**: Use firewall rules to block external access
+4. **Docker Isolation**: For production, use Docker containers with:
+   - Resource limits (`--memory`, `--cpus`)
+   - Network isolation (`--network=none`)
+   - Read-only filesystem
+   - Non-root user
+5. **VM Isolation**: Consider running in a virtual machine
+6. **Input Sanitization**: Never pass user-controlled strings to language configs
+
+### Future Security Enhancements
+
+- [ ] Docker-based sandboxing
+- [ ] cgroups resource limits
+- [ ] seccomp system call filtering
+- [ ] Network namespace isolation
+- [ ] Capability dropping
+- [ ] User namespace isolation
+
+---
+
+## Recent Improvements
+
+### Version 1.0.1 (January 11, 2026)
+
+**✅ Critical Fixes Applied**:
+
+1. **Output Normalization Fix**
+   - Changed from case-insensitive to **case-sensitive** comparison
+   - Now correctly distinguishes "YES" from "yes"
+   - Aligns with competitive programming standards
+   - Fixes false AC verdicts for case-sensitive problems
+
+2. **Precise Execution Time Measurement**
+   - Replaced approximate calculation with `performance.now()`
+   - Provides accurate millisecond-precision runtime statistics
+   - Helps identify performance bottlenecks in code
+
+3. **Enhanced Security Documentation**
+   - Added detailed security warnings and limitations
+   - Documented best practices for safe usage
+   - Clarified threat model and recommended mitigations
 
 ---
 
@@ -245,13 +324,14 @@ No changes to executor logic required.
 
 ## Roadmap
 
-- [ ] Browser extension (Chrome/Firefox)
+- [ ] Browser extension (Chrome/Firefox) - **In Progress**
 - [ ] VS Code extension
-- [ ] Docker sandboxing
-- [ ] Resource limits (CPU/memory)
+- [ ] Docker sandboxing with resource limits
+- [ ] Custom checkers for special judge problems
 - [ ] Stress testing engine
-- [ ] Custom checkers
-- [ ] Interactive problems
+- [ ] Interactive problems support
+- [ ] Multi-test file support
+- [ ] Parallel test execution
 
 ---
 
@@ -285,3 +365,20 @@ Inspired by:
 - [Competitive Programming Helper (CPH)](https://github.com/agrawal-d/cph)
 - [Codeforces](https://codeforces.com)
 - [LeetCode](https://leetcode.com)
+
+---
+
+## Changelog
+
+### v1.0.1 (January 11, 2026)
+- Fixed output normalization for case-sensitive comparison
+- Added precise execution time measurement with performance.now()
+- Enhanced security documentation with detailed warnings
+- Improved runner logging for better debugging
+
+### v1.0.0 (January 11, 2026)
+- Initial production release
+- Multi-language support (C++, Java, Python, JavaScript)
+- Deterministic verdict system
+- Isolated workspace execution
+- Comprehensive test suite
