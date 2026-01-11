@@ -5,6 +5,7 @@
  * - Classify execution results into standard verdicts
  * - Apply deterministic rules
  * - Provide detailed verdict information
+ * - Generate diff for Wrong Answer cases
  * 
  * VERDICT TYPES:
  * - AC: Accepted (correct output)
@@ -14,7 +15,9 @@
  * - CE: Compilation Error
  */
 
-import { compareOutputs } from '../utils/normalize.js';
+import { compareOutputs, strictNormalizeOutput } from '../utils/normalize.js';
+import { generateDiff, formatDiffForConsole, formatDiffForAPI } from '../utils/diff.js';
+import { info, warn } from '../utils/logger.js';
 
 // Verdict constants
 export const VERDICTS = {
@@ -84,12 +87,22 @@ export function determineVerdict(executionResult, expectedOutput) {
       stderr: stderr
     };
   } else {
+    // Generate diff for Wrong Answer
+    const normalizedActual = strictNormalizeOutput(stdout);
+    const normalizedExpected = strictNormalizeOutput(expectedOutput);
+    const diff = generateDiff(normalizedExpected, normalizedActual);
+    
+    // Log diff to console
+    warn('Wrong Answer detected');
+    console.log(formatDiffForConsole(diff));
+    
     return {
       verdict: VERDICTS.WA,
       message: 'Wrong Answer',
       actualOutput: stdout,
       expectedOutput: expectedOutput,
-      stderr: stderr
+      stderr: stderr,
+      diff: formatDiffForAPI(diff)  // Include diff in response
     };
   }
 }
