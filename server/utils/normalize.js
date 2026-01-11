@@ -13,6 +13,8 @@
  * - Only normalize line endings and trailing whitespace
  */
 
+import { debug, debugSection } from './logger.js';
+
 /**
  * Strict normalization (CP-standard)
  * Preserves case sensitivity and internal whitespace structure
@@ -70,20 +72,39 @@ export function normalizeOutput(output) {
  * @returns {boolean} True if outputs match
  */
 export function compareOutputs(actual, expected) {
-  // 🚨 DEBUG LOGGING - CRITICAL FOR DIAGNOSING WA ISSUES
-  console.log('\n========== OUTPUT COMPARISON ==========');
-  console.log('EXPECTED (raw):', JSON.stringify(expected));
-  console.log('ACTUAL (raw):', JSON.stringify(actual));
-  
   const normalizedActual = strictNormalizeOutput(actual);
   const normalizedExpected = strictNormalizeOutput(expected);
   
-  console.log('EXPECTED (normalized):', JSON.stringify(normalizedExpected));
-  console.log('ACTUAL (normalized):', JSON.stringify(normalizedActual));
-  console.log('MATCH:', normalizedActual === normalizedExpected);
-  console.log('=======================================\n');
+  const match = normalizedActual === normalizedExpected;
   
-  return normalizedActual === normalizedExpected;
+  // Debug logging - only shown when DEBUG=true
+  debug('Output Comparison:', {
+    expectedRaw: expected,
+    actualRaw: actual,
+    expectedNormalized: normalizedExpected,
+    actualNormalized: normalizedActual,
+    match: match
+  });
+  
+  // Detailed debug section for mismatches
+  if (!match) {
+    debugSection('OUTPUT MISMATCH DETAILS', {
+      expected: {
+        raw: JSON.stringify(expected),
+        normalized: JSON.stringify(normalizedExpected),
+        length: normalizedExpected.length,
+        lines: normalizedExpected.split('\n').length
+      },
+      actual: {
+        raw: JSON.stringify(actual),
+        normalized: JSON.stringify(normalizedActual),
+        length: normalizedActual.length,
+        lines: normalizedActual.split('\n').length
+      }
+    });
+  }
+  
+  return match;
 }
 
 /**
