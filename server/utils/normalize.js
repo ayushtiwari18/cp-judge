@@ -70,8 +70,19 @@ export function normalizeOutput(output) {
  * @returns {boolean} True if outputs match
  */
 export function compareOutputs(actual, expected) {
+  // 🚨 DEBUG LOGGING - CRITICAL FOR DIAGNOSING WA ISSUES
+  console.log('\n========== OUTPUT COMPARISON ==========');
+  console.log('EXPECTED (raw):', JSON.stringify(expected));
+  console.log('ACTUAL (raw):', JSON.stringify(actual));
+  
   const normalizedActual = strictNormalizeOutput(actual);
   const normalizedExpected = strictNormalizeOutput(expected);
+  
+  console.log('EXPECTED (normalized):', JSON.stringify(normalizedExpected));
+  console.log('ACTUAL (normalized):', JSON.stringify(normalizedActual));
+  console.log('MATCH:', normalizedActual === normalizedExpected);
+  console.log('=======================================\n');
+  
   return normalizedActual === normalizedExpected;
 }
 
