@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CP Judge Local</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-content">
+        <h1 class="title">
+          <span class="icon">⚡</span>
+          <span>CP Judge</span>
+        </h1>
+        <div class="status" id="judgeStatus">
+          <span class="status-dot" id="statusDot"></span>
+          <span class="status-text" id="statusText">Checking...</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+      <!-- Problem Info -->
+      <section class="section" id="problemSection">
+        <div class="section-header">
+          <h2 class="section-title">Problem</h2>
+          <button class="btn btn-small" id="refreshBtn" title="Refresh problem">
+            <span>🔄</span>
+          </button>
+        </div>
+        <div class="problem-info" id="problemInfo">
+          <p class="no-problem">No problem parsed yet. Visit a problem page.</p>
+        </div>
+      </section>
+
+      <!-- Language Selector -->
+      <section class="section">
+        <div class="section-header">
+          <h2 class="section-title">Language</h2>
+        </div>
+        <select class="select" id="languageSelect">
+          <option value="cpp">C++ (g++)</option>
+          <option value="java">Java</option>
+          <option value="python">Python 3</option>
+          <option value="javascript">JavaScript (Node.js)</option>
+        </select>
+      </section>
+
+      <!-- Code Input -->
+      <section class="section">
+        <div class="section-header">
+          <h2 class="section-title">Your Code</h2>
+        </div>
+        <textarea 
+          class="code-editor" 
+          id="codeEditor" 
+          placeholder="Paste your code here..."
+          spellcheck="false"
+        ></textarea>
+      </section>
+
+      <!-- Test Cases -->
+      <section class="section">
+        <div class="section-header">
+          <h2 class="section-title">Test Cases</h2>
+          <button class="btn btn-small" id="addTestBtn" title="Add test case">
+            <span>➕</span>
+          </button>
+        </div>
+        <div class="test-cases" id="testCases">
+          <p class="no-tests">No test cases available</p>
+        </div>
+      </section>
+
+      <!-- Run Button -->
+      <div class="action-bar">
+        <button class="btn btn-primary btn-run" id="runBtn">
+          <span class="btn-icon">▶️</span>
+          <span>Run Tests</span>
+        </button>
+      </div>
+
+      <!-- Results -->
+      <section class="section" id="resultsSection" style="display: none;">
+        <div class="section-header">
+          <h2 class="section-title">Results</h2>
+          <button class="btn btn-small" id="clearResultsBtn" title="Clear results">
+            <span>✖️</span>
+          </button>
+        </div>
+        <div class="results" id="results"></div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <a href="#" id="settingsLink" class="footer-link">Settings</a>
+      <span class="footer-divider">•</span>
+      <a href="https://github.com/ayushtiwari18/cp-judge" target="_blank" class="footer-link">GitHub</a>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
