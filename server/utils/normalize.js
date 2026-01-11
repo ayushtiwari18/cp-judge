@@ -6,14 +6,39 @@
  * - Remove trailing newlines
  * - Handle platform-specific line endings
  * - Ensure consistent comparison logic
+ * 
+ * DESIGN PRINCIPLE:
+ * - Competitive programming requires EXACT case matching
+ * - Default to strict normalization (preserve case)
+ * - Only normalize line endings and trailing whitespace
  */
 
 /**
- * Normalize output for comparison
+ * Strict normalization (CP-standard)
+ * Preserves case sensitivity and internal whitespace structure
  * @param {string} output - Raw output string
  * @returns {string} Normalized output
  */
-export function normalizeOutput(output) {
+export function strictNormalizeOutput(output) {
+  if (typeof output !== 'string') {
+    return '';
+  }
+
+  return output
+    .replace(/\r\n/g, '\n')          // Normalize Windows line endings
+    .replace(/\r/g, '\n')            // Normalize old Mac line endings
+    .replace(/[ \t]+$/gm, '')        // Remove trailing spaces per line
+    .replace(/\n+$/g, '')            // Remove trailing newlines
+    .trim();                          // Remove leading/trailing whitespace
+}
+
+/**
+ * Aggressive normalization (for special cases only)
+ * USE WITH CAUTION - Most CP problems require exact case
+ * @param {string} output - Raw output string
+ * @returns {string} Normalized output
+ */
+export function aggressiveNormalizeOutput(output) {
   if (typeof output !== 'string') {
     return '';
   }
@@ -24,35 +49,41 @@ export function normalizeOutput(output) {
     .replace(/\r/g, '\n')            // Normalize old Mac line endings
     .replace(/\n+$/g, '')            // Remove trailing newlines
     .replace(/[ \t]+$/gm, '')        // Remove trailing spaces per line
-    .replace(/^[ \t]+/gm, '')        // Remove leading spaces per line (optional)
-    .toLowerCase();                   // Case-insensitive comparison (optional)
+    .replace(/^[ \t]+/gm, '')        // Remove leading spaces per line
+    .toLowerCase();                   // Case-insensitive (use carefully!)
 }
 
 /**
- * Strict normalization (preserves more structure)
- * @param {string} output - Raw output string
- * @returns {string} Normalized output
+ * Legacy normalization (deprecated - use strictNormalizeOutput)
+ * Kept for backwards compatibility but should not be used
+ * @deprecated Use strictNormalizeOutput instead
  */
-export function strictNormalizeOutput(output) {
-  if (typeof output !== 'string') {
-    return '';
-  }
-
-  return output
-    .replace(/\r\n/g, '\n')          // Normalize line endings
-    .replace(/\r/g, '\n')
-    .replace(/\n+$/g, '')            // Remove trailing newlines only
-    .trim();
+export function normalizeOutput(output) {
+  console.warn('[DEPRECATED] normalizeOutput() is deprecated. Use strictNormalizeOutput() instead.');
+  return strictNormalizeOutput(output);
 }
 
 /**
- * Compare two outputs with normalization
+ * Compare two outputs with strict normalization (CP-standard)
  * @param {string} actual - Actual program output
  * @param {string} expected - Expected output
  * @returns {boolean} True if outputs match
  */
 export function compareOutputs(actual, expected) {
-  const normalizedActual = normalizeOutput(actual);
-  const normalizedExpected = normalizeOutput(expected);
+  const normalizedActual = strictNormalizeOutput(actual);
+  const normalizedExpected = strictNormalizeOutput(expected);
+  return normalizedActual === normalizedExpected;
+}
+
+/**
+ * Compare outputs with custom normalization function
+ * @param {string} actual - Actual program output
+ * @param {string} expected - Expected output
+ * @param {function} normalizeFn - Normalization function to use
+ * @returns {boolean} True if outputs match
+ */
+export function compareWithNormalizer(actual, expected, normalizeFn = strictNormalizeOutput) {
+  const normalizedActual = normalizeFn(actual);
+  const normalizedExpected = normalizeFn(expected);
   return normalizedActual === normalizedExpected;
 }
