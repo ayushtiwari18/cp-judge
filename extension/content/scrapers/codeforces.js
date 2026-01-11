@@ -103,6 +103,27 @@
   }
 
   /**
+   * Extract text from pre element preserving newlines
+   */
+  function extractPreContent(preElement) {
+    if (!preElement) return '';
+    
+    // Get the text content, preserving newlines
+    let text = preElement.textContent || preElement.innerText || '';
+    
+    // Trim only leading/trailing whitespace, keep internal newlines
+    text = text.replace(/^\s+|\s+$/g, '');
+    
+    console.log('[CF-SCRAPER] Extracted pre content:', {
+      length: text.length,
+      lines: text.split('\n').length,
+      preview: text.substring(0, 100) + (text.length > 100 ? '...' : '')
+    });
+    
+    return text;
+  }
+
+  /**
    * Extract test cases from sample tests
    */
   function extractTestCases() {
@@ -123,15 +144,20 @@
       const count = Math.min(inputs.length, outputs.length);
       
       for (let i = 0; i < count; i++) {
-        const input = inputs[i].textContent.trim();
-        const output = outputs[i].textContent.trim();
+        const input = extractPreContent(inputs[i]);
+        const output = extractPreContent(outputs[i]);
         
         if (input || output) { // Accept even if one is empty
           testCases.push({
             input: input,
             expectedOutput: output
           });
-          console.log('[CF-SCRAPER] Test case', i + 1, '- Input length:', input.length, 'Output length:', output.length);
+          console.log('[CF-SCRAPER] Test case', i + 1, ':', {
+            inputLines: input.split('\n').length,
+            outputLines: output.split('\n').length,
+            inputLength: input.length,
+            outputLength: output.length
+          });
         }
       }
     }
@@ -148,8 +174,8 @@
       const count = Math.min(allInputs.length, allOutputs.length);
       
       for (let i = 0; i < count; i++) {
-        const input = allInputs[i].textContent.trim();
-        const output = allOutputs[i].textContent.trim();
+        const input = extractPreContent(allInputs[i]);
+        const output = extractPreContent(allOutputs[i]);
         
         if (input || output) {
           testCases.push({
