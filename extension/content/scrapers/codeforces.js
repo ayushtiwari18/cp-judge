@@ -1,16 +1,21 @@
 /**
- * Codeforces Problem Scraper
+ * Codeforces Problem Scraper - Professional Edition
  * 
  * RESPONSIBILITIES:
  * - Extract problem metadata (name, limits)
  * - Parse sample test cases from DOM
- * - Detect programming language context
- * - Send problem data to background worker
+ * - Intelligently reconstruct condensed test formats
+ * - Handle multi-test case patterns automatically
+ * - Send properly formatted data to background worker
  * 
  * SUPPORTED URLS:
  * - codeforces.com/problemset/problem/{contest}/{problem}
  * - codeforces.com/contest/{contest}/problem/{problem}
  * - codeforces.com/gym/{gym}/problem/{problem}
+ * 
+ * KEY FEATURE:
+ * Automatically detects and fixes condensed test case formats
+ * where Codeforces displays all input on a single line
  */
 
 (function() {
@@ -22,7 +27,6 @@
    * Extract problem name
    */
   function getProblemName() {
-    // Try multiple selectors
     const selectors = [
       '.problem-statement > .header > .title',
       '.problem-statement .title',
@@ -39,7 +43,6 @@
       }
     }
 
-    // Fallback to page title
     const titleMatch = document.title.match(/Problem - (.+)/);
     if (titleMatch) {
       console.log('[CF-SCRAPER] Problem name from title:', titleMatch[1]);
@@ -56,7 +59,6 @@
   function getTimeLimit() {
     const timeLimitElement = document.querySelector('.time-limit');
     if (!timeLimitElement) {
-      console.log('[CF-SCRAPER] Time limit not found, using default 2000ms');
       return 2000;
     }
 
@@ -66,16 +68,9 @@
     if (match) {
       const value = parseFloat(match[1]);
       const unit = match[2].toLowerCase();
-      
-      if (unit.includes('second')) {
-        console.log('[CF-SCRAPER] Time limit:', value, 'seconds');
-        return value * 1000; // Convert to milliseconds
-      }
-      console.log('[CF-SCRAPER] Time limit:', value, 'milliseconds');
-      return value;
+      return unit.includes('second') ? value * 1000 : value;
     }
 
-    console.log('[CF-SCRAPER] Could not parse time limit, using default 2000ms');
     return 2000;
   }
 
@@ -85,7 +80,6 @@
   function getMemoryLimit() {
     const memoryLimitElement = document.querySelector('.memory-limit');
     if (!memoryLimitElement) {
-      console.log('[CF-SCRAPER] Memory limit not found, using default 256MB');
       return 256;
     }
 
@@ -93,12 +87,9 @@
     const match = text.match(/([0-9]+)\s*(megabyte|MB)/i);
     
     if (match) {
-      const value = parseInt(match[1]);
-      console.log('[CF-SCRAPER] Memory limit:', value, 'MB');
-      return value;
+      return parseInt(match[1]);
     }
 
-    console.log('[CF-SCRAPER] Could not parse memory limit, using default 256MB');
     return 256;
   }
 
@@ -108,30 +99,151 @@
   function extractPreContent(preElement) {
     if (!preElement) return '';
     
-    // Get the text content, preserving newlines
     let text = preElement.textContent || preElement.innerText || '';
-    
-    // Trim only leading/trailing whitespace, keep internal newlines
     text = text.replace(/^\s+|\s+$/g, '');
-    
-    console.log('[CF-SCRAPER] Extracted pre content:', {
-      length: text.length,
-      lines: text.split('\n').length,
-      preview: text.substring(0, 100) + (text.length > 100 ? '...' : '')
-    });
     
     return text;
   }
 
   /**
-   * Extract test cases from sample tests
+   * Analyze problem statement to understand input format
+   * This is the KEY function for handling condensed formats
+   */
+  function analyzeInputFormat() {
+    const inputSection = document.querySelector('.input-specification');
+    if (!inputSection) {
+      console.log('[CF-SCRAPER] No input specification found');
+      return null;
+    }
+
+    const text = inputSection.textContent;
+    console.log('[CF-SCRAPER] Analyzing input format...');
+
+    // Check if it's a multi-test case problem
+    const multiTestPattern = /first line contains.*?integer.*?t.*?number of test cases/i;
+    const isMultiTest = multiTestPattern.test(text);
+
+    if (isMultiTest) {
+      console.log('[CF-SCRAPER] Detected multi-test case format');
+      
+      // Try to detect the structure of each test case
+      const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+      
+      // Common patterns:
+      // "The first line of each test case contains..."
+      // "The second line of each test case contains..."
+      const linesPerTest = [];
+      
+      for (const line of lines) {
+        if (line.match(/first line of each test case/i)) {
+          linesPerTest.push('first');
+        } else if (line.match(/second line of each test case/i)) {
+          linesPerTest.push('second');
+        }
+      }
+
+      return {
+        isMultiTest: true,
+        linesPerTestCase: linesPerTest.length > 0 ? linesPerTest.length : 2, // default to 2 lines
+        hasT: true
+      };
+    }
+
+    return {
+      isMultiTest: false,
+      linesPerTestCase: 0,
+      hasT: false
+    };
+  }
+
+  /**
+   * Reconstruct proper test case format from condensed input
+   * CORE INTELLIGENCE: Converts "1 2 3 4 5 6" → proper multi-line format
+   */
+  function reconstructTestCase(rawInput, rawOutput, format) {
+    console.log('[CF-SCRAPER] Attempting to reconstruct test case...');
+    console.log('[CF-SCRAPER] Raw input:', rawInput.substring(0, 100));
+    console.log('[CF-SCRAPER] Format detected:', format);
+
+    // If already multi-line, return as-is
+    if (rawInput.includes('\n')) {
+      console.log('[CF-SCRAPER] Input already has newlines, using as-is');
+      return { input: rawInput, output: rawOutput };
+    }
+
+    // If no format detected, return as-is
+    if (!format || !format.isMultiTest) {
+      console.log('[CF-SCRAPER] No multi-test format detected, using raw input');
+      return { input: rawInput, output: rawOutput };
+    }
+
+    // Split raw input into tokens
+    const tokens = rawInput.trim().split(/\s+/);
+    console.log('[CF-SCRAPER] Total tokens:', tokens.length);
+
+    // Count expected outputs to determine number of test cases
+    const outputLines = rawOutput.trim().split('\n');
+    const numTests = outputLines.length;
+    console.log('[CF-SCRAPER] Expected test cases:', numTests);
+
+    // Check if first token is the number of test cases
+    const firstToken = parseInt(tokens[0]);
+    if (firstToken === numTests) {
+      console.log('[CF-SCRAPER] First token matches test count - reconstructing...');
+      
+      // Reconstruct format
+      const reconstructed = [tokens[0]]; // First line is 't'
+      let idx = 1;
+      
+      const linesPerTest = format.linesPerTestCase || 2;
+      
+      for (let test = 0; test < numTests; test++) {
+        for (let line = 0; line < linesPerTest; line++) {
+          if (idx >= tokens.length) break;
+          
+          if (line === 0) {
+            // First line of test: usually n and k (2 integers)
+            const lineTokens = [];
+            lineTokens.push(tokens[idx++]);
+            if (idx < tokens.length) lineTokens.push(tokens[idx++]);
+            reconstructed.push(lineTokens.join(' '));
+          } else {
+            // Second line: n integers (array)
+            const n = parseInt(tokens[idx - 2]); // n from previous line
+            const lineTokens = [];
+            for (let i = 0; i < n && idx < tokens.length; i++) {
+              lineTokens.push(tokens[idx++]);
+            }
+            reconstructed.push(lineTokens.join(' '));
+          }
+        }
+      }
+
+      const result = reconstructed.join('\n');
+      console.log('[CF-SCRAPER] ✅ Reconstruction successful!');
+      console.log('[CF-SCRAPER] Reconstructed input lines:', reconstructed.length);
+      
+      return {
+        input: result,
+        output: rawOutput
+      };
+    }
+
+    // Fallback: return raw
+    console.log('[CF-SCRAPER] ⚠️ Could not reconstruct, using raw input');
+    return { input: rawInput, output: rawOutput };
+  }
+
+  /**
+   * Extract test cases from sample tests with intelligent parsing
    */
   function extractTestCases() {
     const testCases = [];
-
     console.log('[CF-SCRAPER] Starting test case extraction...');
 
-    // Method 1: Use .sample-test structure (most common)
+    // First, analyze the input format
+    const format = analyzeInputFormat();
+
     const sampleTest = document.querySelector('.sample-test');
     if (sampleTest) {
       console.log('[CF-SCRAPER] Found .sample-test container');
@@ -144,46 +256,44 @@
       const count = Math.min(inputs.length, outputs.length);
       
       for (let i = 0; i < count; i++) {
-        const input = extractPreContent(inputs[i]);
-        const output = extractPreContent(outputs[i]);
+        const rawInput = extractPreContent(inputs[i]);
+        const rawOutput = extractPreContent(outputs[i]);
         
-        if (input || output) { // Accept even if one is empty
-          testCases.push({
-            input: input,
-            expectedOutput: output
-          });
-          console.log('[CF-SCRAPER] Test case', i + 1, ':', {
-            inputLines: input.split('\n').length,
-            outputLines: output.split('\n').length,
-            inputLength: input.length,
-            outputLength: output.length
-          });
-        }
+        // Apply intelligent reconstruction
+        const reconstructed = reconstructTestCase(rawInput, rawOutput, format);
+        
+        testCases.push({
+          input: reconstructed.input,
+          expectedOutput: reconstructed.output
+        });
+        
+        console.log('[CF-SCRAPER] Test case', i + 1, ':', {
+          inputLines: reconstructed.input.split('\n').length,
+          outputLines: reconstructed.output.split('\n').length,
+          wasReconstructed: rawInput !== reconstructed.input
+        });
       }
     }
 
-    // Method 2: Fallback - find all input/output sections
+    // Fallback method
     if (testCases.length === 0) {
       console.log('[CF-SCRAPER] Trying fallback method...');
       
       const allInputs = document.querySelectorAll('div.input pre, .input pre');
       const allOutputs = document.querySelectorAll('div.output pre, .output pre');
 
-      console.log('[CF-SCRAPER] Fallback - Found inputs:', allInputs.length, 'outputs:', allOutputs.length);
-
       const count = Math.min(allInputs.length, allOutputs.length);
       
       for (let i = 0; i < count; i++) {
-        const input = extractPreContent(allInputs[i]);
-        const output = extractPreContent(allOutputs[i]);
+        const rawInput = extractPreContent(allInputs[i]);
+        const rawOutput = extractPreContent(allOutputs[i]);
         
-        if (input || output) {
-          testCases.push({
-            input: input,
-            expectedOutput: output
-          });
-          console.log('[CF-SCRAPER] Fallback test case', i + 1, 'added');
-        }
+        const reconstructed = reconstructTestCase(rawInput, rawOutput, format);
+        
+        testCases.push({
+          input: reconstructed.input,
+          expectedOutput: reconstructed.output
+        });
       }
     }
 
@@ -248,7 +358,6 @@
    * Show notification to user
    */
   function showNotification(message, type = 'info') {
-    // Create notification element
     const notification = document.createElement('div');
     notification.className = `cp-judge-notification cp-judge-${type}`;
     notification.textContent = message;
@@ -271,7 +380,6 @@
 
     document.body.appendChild(notification);
 
-    // Remove after 4 seconds
     setTimeout(() => {
       notification.style.animation = 'slideOut 0.3s ease-in';
       setTimeout(() => notification.remove(), 300);
@@ -329,7 +437,6 @@
   function initAutoParse() {
     console.log('[CF-SCRAPER] Checking if page is ready for parsing...');
     
-    // Wait for DOM to be ready
     if (document.readyState === 'loading') {
       console.log('[CF-SCRAPER] Waiting for DOM to load...');
       document.addEventListener('DOMContentLoaded', () => {
@@ -346,7 +453,6 @@
    * Attempt to auto-parse problem
    */
   function attemptAutoParse() {
-    // Check if we're on a problem page
     if (!window.location.href.includes('/problem/')) {
       console.log('[CF-SCRAPER] Not a problem page, skipping auto-parse');
       return;
@@ -354,7 +460,6 @@
 
     console.log('[CF-SCRAPER] Attempting auto-parse...');
     
-    // Check if problem content exists
     const problemStatement = document.querySelector('.problem-statement');
     if (!problemStatement) {
       console.log('[CF-SCRAPER] Problem statement not found, retrying in 2 seconds...');
@@ -362,7 +467,6 @@
       return;
     }
 
-    // Parse and send
     const problemData = parseProblem();
     if (problemData.testCases.length > 0) {
       sendProblemData(problemData);
@@ -378,5 +482,5 @@
   // Initialize auto-parse
   initAutoParse();
 
-  console.log('[CF-SCRAPER] Ready to parse Codeforces problems');
+  console.log('[CF-SCRAPER] ✨ Professional scraper ready with intelligent parsing');
 })();
