@@ -6,7 +6,7 @@
  * - Manage workspace creation/cleanup
  * - Handle compilation
  * - Run test cases sequentially
- * - Return aggregated results
+ * - Return aggregated results with summary
  */
 
 import { getLanguage } from '../languages/config.js';
@@ -14,6 +14,7 @@ import { createWorkspace, writeSourceFile, cleanupWorkspace } from '../utils/fil
 import { compile } from '../executor/compiler.js';
 import { runProgram } from '../executor/runner.js';
 import { determineVerdict, createCompilationErrorVerdict, VERDICTS } from '../executor/verdictEngine.js';
+import { info, warn, error as logError } from '../utils/logger.js';
 
 /**
  * Execute code with test cases
@@ -35,7 +36,7 @@ export async function executeCode(languageId, code, testCases, timeLimit = 2000)
 
     // Create isolated workspace
     workspacePath = await createWorkspace();
-    console.log(`[EXECUTOR] Workspace created: ${workspacePath}`);
+    info(`Workspace created: ${workspacePath}`);
 
     // Determine source filename
     let sourceFileName = `Main${langConfig.extension}`;
@@ -45,27 +46,36 @@ export async function executeCode(languageId, code, testCases, timeLimit = 2000)
 
     // Write source code to file
     await writeSourceFile(workspacePath, sourceFileName, code);
-    console.log(`[EXECUTOR] Source file written: ${sourceFileName}`);
+    info(`Source file written: ${sourceFileName}`);
 
     // Compile if needed
     const compileResult = await compile(langConfig, workspacePath, sourceFileName);
     
     if (!compileResult.success) {
-      console.log('[EXECUTOR] Compilation failed');
+      warn('Compilation failed');
       return {
         success: false,
         compilationError: createCompilationErrorVerdict(compileResult.stderr),
-        results: []
+        results: [],
+        summary: {
+          overallVerdict: VERDICTS.CE,
+          totalTests: testCases.length,
+          passed: 0,
+          failed: testCases.length,
+          totalTime: 0
+        }
       };
     }
 
-    console.log('[EXECUTOR] Compilation successful');
+    info('Compilation successful');
 
     // Run test cases
     const results = [];
+    let totalTime = 0;
+    
     for (let i = 0; i < testCases.length; i++) {
       const testCase = testCases[i];
-      console.log(`[EXECUTOR] Running test case ${i + 1}/${testCases.length}`);
+      info(`Running test case ${i + 1}/${testCases.length}`);
 
       // Execute program with test input
       const executionResult = await runProgram(
@@ -78,6 +88,8 @@ export async function executeCode(languageId, code, testCases, timeLimit = 2000)
 
       // Determine verdict
       const verdict = determineVerdict(executionResult, testCase.expectedOutput);
+      
+      totalTime += executionResult.executionTime || 0;
 
       results.push({
         testCase: i + 1,
@@ -86,27 +98,105 @@ export async function executeCode(languageId, code, testCases, timeLimit = 2000)
         actualOutput: verdict.actualOutput,
         expectedOutput: verdict.expectedOutput,
         stderr: verdict.stderr,
-        executionTime: executionResult.executionTime || 0
+        executionTime: executionResult.executionTime || 0,
+        diff: verdict.diff || null  // Include diff for WA cases
       });
 
-      console.log(`[EXECUTOR] Test case ${i + 1}: ${verdict.verdict}`);
+      info(`Test case ${i + 1}: ${verdict.verdict} (${executionResult.executionTime || 0}ms)`);
     }
+
+    // Calculate summary
+    const summary = calculateSummary(results, totalTime);
+    
+    // Log final summary
+    logSummary(summary);
 
     return {
       success: true,
       results: results,
-      compilationError: null
+      compilationError: null,
+      summary: summary
     };
 
   } catch (error) {
-    console.error('[EXECUTOR ERROR]', error);
+    logError('Execution error:', error);
     throw error;
 
   } finally {
     // Always cleanup workspace
     if (workspacePath) {
       await cleanupWorkspace(workspacePath);
-      console.log('[EXECUTOR] Workspace cleaned up');
+      info('Workspace cleaned up');
     }
   }
+}
+
+/**
+ * Calculate summary statistics from results
+ * @param {Array} results - Test case results
+ * @param {number} totalTime - Total execution time
+ * @returns {object} Summary statistics
+ */
+function calculateSummary(results, totalTime) {
+  const verdictCounts = {
+    [VERDICTS.AC]: 0,
+    [VERDICTS.WA]: 0,
+    [VERDICTS.TLE]: 0,
+    [VERDICTS.RE]: 0
+  };
+
+  let firstFailure = null;
+
+  results.forEach(result => {
+    verdictCounts[result.verdict]++;
+    if (!firstFailure && result.verdict !== VERDICTS.AC) {
+      firstFailure = result.testCase;
+    }
+  });
+
+  const passed = verdictCounts[VERDICTS.AC];
+  const total = results.length;
+  
+  // Overall verdict determination
+  let overallVerdict;
+  if (passed === total) {
+    overallVerdict = VERDICTS.AC;
+  } else if (verdictCounts[VERDICTS.TLE] > 0) {
+    overallVerdict = VERDICTS.TLE;
+  } else if (verdictCounts[VERDICTS.RE] > 0) {
+    overallVerdict = VERDICTS.RE;
+  } else {
+    overallVerdict = VERDICTS.WA;
+  }
+
+  return {
+    overallVerdict: overallVerdict,
+    totalTests: total,
+    passed: passed,
+    failed: total - passed,
+    firstFailure: firstFailure,
+    verdictBreakdown: verdictCounts,
+    totalTime: totalTime,
+    avgTime: total > 0 ? Math.round(totalTime / total) : 0
+  };
+}
+
+/**
+ * Log summary to console
+ * @param {object} summary - Summary object
+ */
+function logSummary(summary) {
+  console.log('\n' + '━'.repeat(50));
+  console.log('  TEST SUMMARY');
+  console.log('━'.repeat(50));
+  console.log(`Overall Verdict: ${summary.overallVerdict}`);
+  console.log(`Tests Passed: ${summary.passed}/${summary.totalTests}`);
+  
+  if (summary.firstFailure) {
+    console.log(`First Failure: Test ${summary.firstFailure}`);
+  }
+  
+  console.log(`Total Time: ${summary.totalTime}ms`);
+  console.log(`Average Time: ${summary.avgTime}ms`);
+  console.log('━'.repeat(50) + '\n');
 }
