@@ -6,19 +6,26 @@
  * - Kill processes that exceed timeout
  * - Capture stdout and stderr
  * - Detect runtime errors and timeouts
+ * - Measure precise execution time
+ * 
+ * SECURITY NOTE:
+ * - Uses shell: true for command execution
+ * - DO NOT expose to untrusted input without sanitization
+ * - Recommended for local/trusted environments only
  */
 
 import { spawn } from 'child_process';
+import { performance } from 'perf_hooks';
 
 /**
- * Execute command with timeout
+ * Execute command with timeout and precise time measurement
  * @param {string} command - Command to execute
  * @param {string[]} args - Command arguments
  * @param {object} options - Execution options
  * @param {number} options.timeout - Timeout in milliseconds
  * @param {string} options.cwd - Working directory
  * @param {string} options.input - Input to pass via stdin
- * @returns {Promise<object>} Execution result
+ * @returns {Promise<object>} Execution result with precise timing
  */
 export function executeWithTimeout(command, args, options = {}) {
   return new Promise((resolve) => {
@@ -33,10 +40,13 @@ export function executeWithTimeout(command, args, options = {}) {
     let timedOut = false;
     let killed = false;
 
+    // Start high-resolution timer
+    const startTime = performance.now();
+
     // Spawn process
     const child = spawn(command, args, {
       cwd,
-      shell: true,
+      shell: true, // SECURITY: Required for command templates, but be cautious
       timeout: timeout + 100 // Buffer for graceful termination
     });
 
@@ -61,12 +71,17 @@ export function executeWithTimeout(command, args, options = {}) {
     child.on('close', (code) => {
       clearTimeout(timeoutId);
 
+      // Calculate precise execution time
+      const endTime = performance.now();
+      const executionTime = Math.round(endTime - startTime);
+
       resolve({
         stdout: stdout,
         stderr: stderr,
         exitCode: code,
         timedOut: timedOut,
-        killed: killed
+        killed: killed,
+        executionTime: executionTime // Precise measurement in milliseconds
       });
     });
 
@@ -74,13 +89,17 @@ export function executeWithTimeout(command, args, options = {}) {
     child.on('error', (error) => {
       clearTimeout(timeoutId);
 
+      const endTime = performance.now();
+      const executionTime = Math.round(endTime - startTime);
+
       resolve({
         stdout: '',
         stderr: error.message,
         exitCode: -1,
         timedOut: false,
         killed: false,
-        error: error
+        error: error,
+        executionTime: executionTime
       });
     });
 
