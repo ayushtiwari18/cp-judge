@@ -1,3 +1,6 @@
+// 🔥 INJECTION VERIFICATION - DO NOT REMOVE
+console.log('🔥 CP Judge content script INJECTED on:', window.location.href);
+
 /**
  * Codeforces Problem Scraper - Professional Edition
  * 
@@ -21,7 +24,7 @@
 (function() {
   'use strict';
 
-  console.log('[CF-SCRAPER] Codeforces scraper initialized on:', window.location.href);
+  console.log('[CF-SCRAPER] ✨ Professional scraper initializing...');
 
   /**
    * Extract problem name
@@ -117,14 +120,14 @@
     }
 
     const text = inputSection.textContent;
-    console.log('[CF-SCRAPER] Analyzing input format...');
+    console.log('[CF-SCRAPER] 🔍 Analyzing input format...');
 
     // Check if it's a multi-test case problem
     const multiTestPattern = /first line contains.*?integer.*?t.*?number of test cases/i;
     const isMultiTest = multiTestPattern.test(text);
 
     if (isMultiTest) {
-      console.log('[CF-SCRAPER] Detected multi-test case format');
+      console.log('[CF-SCRAPER] ✅ Detected multi-test case format');
       
       // Try to detect the structure of each test case
       const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
@@ -161,19 +164,19 @@
    * CORE INTELLIGENCE: Converts "1 2 3 4 5 6" → proper multi-line format
    */
   function reconstructTestCase(rawInput, rawOutput, format) {
-    console.log('[CF-SCRAPER] Attempting to reconstruct test case...');
-    console.log('[CF-SCRAPER] Raw input:', rawInput.substring(0, 100));
+    console.log('[CF-SCRAPER] 🔧 Attempting to reconstruct test case...');
+    console.log('[CF-SCRAPER] Raw input preview:', rawInput.substring(0, 100));
     console.log('[CF-SCRAPER] Format detected:', format);
 
     // If already multi-line, return as-is
     if (rawInput.includes('\n')) {
-      console.log('[CF-SCRAPER] Input already has newlines, using as-is');
+      console.log('[CF-SCRAPER] ✅ Input already has newlines, using as-is');
       return { input: rawInput, output: rawOutput };
     }
 
     // If no format detected, return as-is
     if (!format || !format.isMultiTest) {
-      console.log('[CF-SCRAPER] No multi-test format detected, using raw input');
+      console.log('[CF-SCRAPER] ⚠️ No multi-test format detected, using raw input');
       return { input: rawInput, output: rawOutput };
     }
 
@@ -184,12 +187,12 @@
     // Count expected outputs to determine number of test cases
     const outputLines = rawOutput.trim().split('\n');
     const numTests = outputLines.length;
-    console.log('[CF-SCRAPER] Expected test cases:', numTests);
+    console.log('[CF-SCRAPER] Expected test cases (from output):', numTests);
 
     // Check if first token is the number of test cases
     const firstToken = parseInt(tokens[0]);
     if (firstToken === numTests) {
-      console.log('[CF-SCRAPER] First token matches test count - reconstructing...');
+      console.log('[CF-SCRAPER] ✅ First token matches test count - reconstructing...');
       
       // Reconstruct format
       const reconstructed = [tokens[0]]; // First line is 't'
@@ -221,7 +224,8 @@
 
       const result = reconstructed.join('\n');
       console.log('[CF-SCRAPER] ✅ Reconstruction successful!');
-      console.log('[CF-SCRAPER] Reconstructed input lines:', reconstructed.length);
+      console.log('[CF-SCRAPER] Reconstructed lines:', reconstructed.length);
+      console.log('[CF-SCRAPER] Preview:', result.substring(0, 200));
       
       return {
         input: result,
@@ -239,7 +243,7 @@
    */
   function extractTestCases() {
     const testCases = [];
-    console.log('[CF-SCRAPER] Starting test case extraction...');
+    console.log('[CF-SCRAPER] 📝 Starting test case extraction...');
 
     // First, analyze the input format
     const format = analyzeInputFormat();
@@ -297,7 +301,7 @@
       }
     }
 
-    console.log('[CF-SCRAPER] Total test cases extracted:', testCases.length);
+    console.log('[CF-SCRAPER] ✅ Total test cases extracted:', testCases.length);
     return testCases;
   }
 
@@ -312,7 +316,7 @@
    * Parse problem data
    */
   function parseProblem() {
-    console.log('[CF-SCRAPER] Parsing problem...');
+    console.log('[CF-SCRAPER] 🚀 Parsing problem...');
     
     const problemData = {
       platform: 'codeforces',
@@ -324,7 +328,7 @@
       timestamp: Date.now()
     };
 
-    console.log('[CF-SCRAPER] Problem parsed:', problemData);
+    console.log('[CF-SCRAPER] ✅ Problem parsed successfully:', problemData);
     return problemData;
   }
 
@@ -332,23 +336,23 @@
    * Send problem data to background worker
    */
   function sendProblemData(problemData) {
-    console.log('[CF-SCRAPER] Sending problem data to background...');
+    console.log('[CF-SCRAPER] 📤 Sending problem data to background...');
     
     chrome.runtime.sendMessage({
       type: 'STORE_PROBLEM',
       data: problemData
     }, (response) => {
       if (chrome.runtime.lastError) {
-        console.error('[CF-SCRAPER] Failed to send problem:', chrome.runtime.lastError);
+        console.error('[CF-SCRAPER] ❌ Failed to send problem:', chrome.runtime.lastError);
         showNotification('Failed to parse problem: ' + chrome.runtime.lastError.message, 'error');
         return;
       }
 
       if (response && response.success) {
-        console.log('[CF-SCRAPER] Problem sent successfully');
+        console.log('[CF-SCRAPER] ✅ Problem sent successfully');
         showNotification(`✅ Parsed: ${problemData.name}\n${problemData.testCases.length} test cases found`, 'success');
       } else {
-        console.error('[CF-SCRAPER] Failed to store problem:', response);
+        console.error('[CF-SCRAPER] ❌ Failed to store problem:', response);
         showNotification('Failed to parse problem', 'error');
       }
     });
@@ -421,7 +425,7 @@
    * Listen for messages from background/popup
    */
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    console.log('[CF-SCRAPER] Received message:', message.type);
+    console.log('[CF-SCRAPER] 📬 Received message:', message.type);
     
     if (message.type === 'PARSE_PROBLEM') {
       const problemData = parseProblem();
@@ -435,16 +439,16 @@
    * Wait for page to load, then auto-parse
    */
   function initAutoParse() {
-    console.log('[CF-SCRAPER] Checking if page is ready for parsing...');
+    console.log('[CF-SCRAPER] 🕐 Checking if page is ready for parsing...');
     
     if (document.readyState === 'loading') {
-      console.log('[CF-SCRAPER] Waiting for DOM to load...');
+      console.log('[CF-SCRAPER] ⏳ Waiting for DOM to load...');
       document.addEventListener('DOMContentLoaded', () => {
-        console.log('[CF-SCRAPER] DOM loaded, parsing in 1 second...');
+        console.log('[CF-SCRAPER] ✅ DOM loaded, parsing in 1 second...');
         setTimeout(attemptAutoParse, 1000);
       });
     } else {
-      console.log('[CF-SCRAPER] DOM already loaded, parsing in 1 second...');
+      console.log('[CF-SCRAPER] ✅ DOM already loaded, parsing in 1 second...');
       setTimeout(attemptAutoParse, 1000);
     }
   }
@@ -454,15 +458,15 @@
    */
   function attemptAutoParse() {
     if (!window.location.href.includes('/problem/')) {
-      console.log('[CF-SCRAPER] Not a problem page, skipping auto-parse');
+      console.log('[CF-SCRAPER] ⚠️ Not a problem page, skipping auto-parse');
       return;
     }
 
-    console.log('[CF-SCRAPER] Attempting auto-parse...');
+    console.log('[CF-SCRAPER] 🚀 Attempting auto-parse...');
     
     const problemStatement = document.querySelector('.problem-statement');
     if (!problemStatement) {
-      console.log('[CF-SCRAPER] Problem statement not found, retrying in 2 seconds...');
+      console.log('[CF-SCRAPER] ⚠️ Problem statement not found, retrying in 2 seconds...');
       setTimeout(attemptAutoParse, 2000);
       return;
     }
@@ -471,7 +475,7 @@
     if (problemData.testCases.length > 0) {
       sendProblemData(problemData);
     } else {
-      console.warn('[CF-SCRAPER] No test cases found, waiting 2 more seconds...');
+      console.warn('[CF-SCRAPER] ⚠️ No test cases found, waiting 2 more seconds...');
       setTimeout(() => {
         const retryData = parseProblem();
         sendProblemData(retryData);
