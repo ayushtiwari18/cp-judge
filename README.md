@@ -1,384 +1,384 @@
-# CP Judge Local
+# CP Judge - Local Competitive Programming Judge
 
-**Production-Grade Local Competitive Programming Judge**
+<div align="center">
 
-A CPH-style execution engine that runs competitive programming code locally with deterministic verdicts. Supports C++, Java, Python, and JavaScript.
+![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
+![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey.svg)
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+**A production-grade local judge for competitive programming**
 
----
+Fast • Accurate • Offline-First
 
-## Features
-
-✅ **Multi-Language Support** - C++, Java, Python 3, JavaScript  
-✅ **Deterministic Verdicts** - AC, WA, TLE, RE, CE  
-✅ **Isolated Execution** - Separate workspace per request  
-✅ **Timeout Enforcement** - Configurable time limits  
-✅ **Precise Timing** - High-resolution execution measurement  
-✅ **Strict Output Comparison** - Case-sensitive CP-standard matching  
-✅ **HTTP API** - Easy integration with extensions  
-✅ **No Network Required** - Fully local execution  
-✅ **Cross-Platform** - Linux, macOS, Windows  
+</div>
 
 ---
 
-## Quick Start
+## 🎯 Problem Statement
+
+Competitive programmers waste time:
+- ❌ Copying test cases manually
+- ❌ Switching between browser and editor
+- ❌ Debugging formatting issues blindly
+
+**CP Judge solves this** with:
+- ✅ Automatic test case extraction
+- ✅ One-click execution from browser
+- ✅ Instant feedback with detailed diff
+
+---
+
+## ✨ Features
+
+### Core Functionality
+- **Multi-language Support:** C++, Java, Python, JavaScript
+- **Automatic Test Extraction:** Scrape problems from Codeforces
+- **Professional Verdicts:** AC, WA, TLE, RE, CE
+- **Diff Viewer:** Line-by-line output comparison
+- **Multiple Test Cases:** Run all samples at once
+- **Performance Metrics:** Time and memory tracking
+
+### Technical Excellence
+- **Offline-First:** Works without internet after test cases load
+- **Safe Execution:** Workspace isolation and resource limits
+- **Clean Logging:** DEBUG mode for development
+- **Professional Architecture:** Modular, testable, maintainable
+
+---
+
+## 🚀 Quick Start
 
 ### Prerequisites
 
-Install compilers and runtimes:
-
-```bash
-# C++
-g++ --version
-
-# Java
-javac --version
-java --version
-
-# Python
-python3 --version
-
-# JavaScript (Node.js)
-node --version
-```
+- **Node.js** 18+ ([Download](https://nodejs.org/))
+- **Compilers/Interpreters:**
+  - C++: `g++` (Linux/Mac) or MinGW (Windows)
+  - Java: JDK 11+
+  - Python: 3.8+
+  - JavaScript: Node.js
 
 ### Installation
 
+#### 1. Clone Repository
 ```bash
-# Clone repository
 git clone https://github.com/ayushtiwari18/cp-judge.git
-cd cp-judge/server
+cd cp-judge
+```
 
-# Install dependencies
+#### 2. Install Server Dependencies
+```bash
+cd server
 npm install
+```
 
-# Start server
+#### 3. Load Browser Extension
+
+**Chrome/Edge:**
+1. Go to `chrome://extensions/`
+2. Enable "Developer mode"
+3. Click "Load unpacked"
+4. Select `extension` folder from this repo
+
+**Firefox:**
+1. Go to `about:debugging#/runtime/this-firefox`
+2. Click "Load Temporary Add-on"
+3. Select `manifest.json` from `extension` folder
+
+#### 4. Start Server
+```bash
+cd server
 npm start
 ```
 
-Server runs on `http://localhost:3000`
+**Server runs on:** `http://localhost:3000`
 
 ---
 
-## Usage
+## 📚 Usage Guide
 
-### API Endpoints
+### Basic Workflow
 
-#### Health Check
-```bash
-GET /api/health
+1. **Open a Codeforces problem** (e.g., https://codeforces.com/problemset/problem/1877/A)
+2. **Extension auto-extracts** test cases
+3. **Write your solution** in your favorite editor
+4. **Click extension icon** → Paste code → Run
+5. **Get instant verdict** with diff (if WA)
+
+### Example
+
+**Problem:** Sum of two numbers
+
+**Input:**
+```
+2
+3 5
+10 20
 ```
 
-#### List Supported Languages
-```bash
-GET /api/languages
+**Expected Output:**
+```
+8
+30
 ```
 
-#### Execute Code
-```bash
-POST /api/run
-```
+**Your Code:**
+```cpp
+#include <iostream>
+using namespace std;
 
-**Request Body:**
-```json
-{
-  "language": "cpp",
-  "code": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int a, b;\n    cin >> a >> b;\n    cout << a + b << endl;\n    return 0;\n}",
-  "testCases": [
-    {
-      "input": "2 3",
-      "expectedOutput": "5"
-    },
-    {
-      "input": "10 20",
-      "expectedOutput": "30"
+int main() {
+    int t;
+    cin >> t;
+    while(t--) {
+        int a, b;
+        cin >> a >> b;
+        cout << a + b << endl;
     }
-  ],
-  "timeLimit": 2000
+    return 0;
 }
 ```
 
-**Response:**
-```json
-{
-  "success": true,
-  "results": [
-    {
-      "testCase": 1,
-      "verdict": "AC",
-      "message": "Accepted",
-      "actualOutput": "5",
-      "expectedOutput": "5",
-      "executionTime": 45
-    },
-    {
-      "testCase": 2,
-      "verdict": "AC",
-      "message": "Accepted",
-      "actualOutput": "30",
-      "expectedOutput": "30",
-      "executionTime": 42
-    }
-  ],
-  "compilationError": null
-}
+**Result:**
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  TEST SUMMARY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Overall Verdict: AC
+Tests Passed: 2/2
+Total Time: 8ms
+Peak Memory: 7.84MB
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
 ---
 
-## Testing
+## 🏛️ Architecture
 
-### Manual Test Suite
+### High-Level Overview
+
+```
+┌─────────────────┐
+│  Browser        │
+│  Extension      │  ← User Interface
+└────────┬────────┘
+         │ HTTP
+         ↓
+┌─────────────────┐
+│  Local Server   │
+│  (Node.js)      │  ← Execution Engine
+└────────┬────────┘
+         │
+         ↓
+┌─────────────────┐
+│  OS Toolchain   │
+│  (g++/javac/    │  ← Compilers/Interpreters
+│   python/node)  │
+└─────────────────┘
+```
+
+### Component Responsibilities
+
+| Component | Responsibility |
+|-----------|----------------|
+| **Extension** | Scrape problems, display results |
+| **Server** | Execute code, determine verdict |
+| **Executor** | Compilation, sandboxing, timeout |
+| **Verdict Engine** | AC/WA/TLE/RE classification |
+| **Diff Generator** | Output comparison |
+
+### Key Design Decisions
+
+✅ **1 Execution = 1 Test Case**
+- Each test runs in isolation
+- Clean stdin/stdout per test
+- No shared state between tests
+
+✅ **Workspace Isolation**
+- Each run gets a temporary directory
+- Cleaned up after execution
+- No cross-contamination
+
+✅ **Strict Output Normalization**
+- Preserves case sensitivity
+- Removes trailing whitespace
+- Handles platform line endings
+
+---
+
+## 🔒 Security Model
+
+### Current Protections
+
+- ✅ Workspace isolation (temporary directories)
+- ✅ Timeout enforcement (kills runaway processes)
+- ✅ Memory tracking (monitoring)
+- ✅ Process cleanup (forced kill on timeout)
+
+### Known Limitations
+
+⚠️ **Local execution is inherently less secure than sandboxed environments**
+
+- Network access not blocked (future: Docker/firejail)
+- Filesystem access limited by OS permissions only
+- Memory limits are best-effort (OS-dependent)
+
+**Recommendation:** Only run trusted code or use in isolated environments.
+
+---
+
+## 🧠 Technical Details
+
+### Verdict Determination Logic
+
+```javascript
+if (timedOut) return "TLE";
+if (exitCode !== 0) return "RE";
+if (output !== expected) return "WA";
+return "AC";
+```
+
+### Memory Tracking
+
+- Samples every 50ms during execution
+- Tracks peak and average usage
+- Best-effort (OS-dependent accuracy)
+
+### Time Measurement
+
+- High-precision (`performance.now()`)
+- Measured from process spawn to exit
+- Millisecond accuracy
+
+---
+
+## 📊 Performance
+
+| Metric | Typical Value |
+|--------|---------------|
+| Startup Time | < 1s |
+| Test Execution | 5-50ms (simple) |
+| Memory Usage | 10-50MB per test |
+| Compilation | 500-2000ms |
+
+---
+
+## 🛠️ Development
+
+### Debug Mode
 
 ```bash
-cd server
-node tests/manualTests.js
+DEBUG=true npm start
 ```
 
-Tests all verdict types across all languages.
+Shows detailed logs:
+- Input/output comparison
+- Diff analysis
+- Execution metrics
 
-### cURL Examples
-
-```bash
-bash tests/curl-examples.sh
-```
-
----
-
-## Verdict Types
-
-| Verdict | Description | When Assigned |
-|---------|-------------|---------------|
-| **AC** | Accepted | Output matches expected |
-| **WA** | Wrong Answer | Output mismatch |
-| **TLE** | Time Limit Exceeded | Execution timeout |
-| **RE** | Runtime Error | Non-zero exit, crash |
-| **CE** | Compilation Error | Compilation failed |
-
----
-
-## Project Structure
+### Project Structure
 
 ```
 cp-judge/
 ├── server/
-│   ├── api/
-│   │   ├── routes.js          # HTTP endpoints
-│   │   └── executor.js        # Orchestration logic
-│   ├── executor/
-│   │   ├── compiler.js        # Compilation engine
-│   │   ├── runner.js          # Execution engine
-│   │   └── verdictEngine.js   # Classification logic
-│   ├── languages/
-│   │   └── config.js          # Language definitions
-│   ├── utils/
-│   │   ├── fileSystem.js      # Workspace management
-│   │   ├── timeout.js         # Process control
-│   │   └── normalize.js       # Output normalization
-│   ├── tests/
-│   │   ├── manualTests.js     # Test suite
-│   │   └── curl-examples.sh   # API examples
-│   ├── server.js              # Entry point
-│   └── package.json
-├── docs/
-│   ├── ARCHITECTURE.md        # System design
-│   ├── EXECUTION_LIFECYCLE.md # How execution works
-│   └── TESTING.md             # Testing guide
+│   ├── api/              # HTTP endpoints
+│   ├── executor/         # Core judge logic
+│   ├── languages/        # Language configs
+│   ├── utils/            # Helpers
+│   └── server.js         # Entry point
+├── extension/
+│   ├── background.js     # Service worker
+│   ├── content.js        # Page injection
+│   ├── popup/            # UI
+│   └── manifest.json     # Extension config
 └── README.md
 ```
 
----
+### Adding a New Language
 
-## Security
-
-**⚠️ CRITICAL WARNING: This judge executes arbitrary code on your system.**
-
-### Security Model
-
-This is a **local development tool** designed for trusted environments. It is **NOT** a secure online judge.
-
-### Current Safety Measures
-- ✅ Isolated workspaces per request (UUID-based)
-- ✅ Timeout enforcement with forced process termination
-- ✅ Process killing on overrun (SIGKILL)
-- ✅ Separate execution directories
-- ✅ Automatic workspace cleanup
-
-### Known Security Limitations
-
-**❌ No Sandbox**: Code runs with **your user privileges**
-- Can read/write any files you have access to
-- Can execute system commands
-- Can access network resources
-- Can consume unlimited CPU/memory
-
-**❌ No Network Isolation**: Code has full network access
-- Can make HTTP requests
-- Can open sockets
-- Can connect to databases
-
-**❌ No Resource Limits**: 
-- CPU usage not constrained
-- Memory usage not constrained
-- Disk usage not constrained
-
-**⚠️ Shell Command Execution**: Uses `shell: true` for process spawning
-- Required for language command templates
-- Potential command injection risk with untrusted input
-
-### Security Best Practices
-
-**✅ SAFE Use Cases**:
-- Personal competitive programming practice
-- Solving problems from trusted sources (Codeforces, LeetCode)
-- Testing your own code locally
-- Educational environments with trusted students
-
-**❌ UNSAFE Use Cases**:
-- Public-facing online judge
-- Multi-tenant environments
-- Untrusted code execution
-- Production web services
-
-### Recommendations
-
-1. **Local Use Only**: Never expose port 3000 to the internet
-2. **Trusted Code Only**: Only run code you wrote or trust
-3. **Firewall Protection**: Use firewall rules to block external access
-4. **Docker Isolation**: For production, use Docker containers with:
-   - Resource limits (`--memory`, `--cpus`)
-   - Network isolation (`--network=none`)
-   - Read-only filesystem
-   - Non-root user
-5. **VM Isolation**: Consider running in a virtual machine
-6. **Input Sanitization**: Never pass user-controlled strings to language configs
-
-### Future Security Enhancements
-
-- [ ] Docker-based sandboxing
-- [ ] cgroups resource limits
-- [ ] seccomp system call filtering
-- [ ] Network namespace isolation
-- [ ] Capability dropping
-- [ ] User namespace isolation
-
----
-
-## Recent Improvements
-
-### Version 1.0.1 (January 11, 2026)
-
-**✅ Critical Fixes Applied**:
-
-1. **Output Normalization Fix**
-   - Changed from case-insensitive to **case-sensitive** comparison
-   - Now correctly distinguishes "YES" from "yes"
-   - Aligns with competitive programming standards
-   - Fixes false AC verdicts for case-sensitive problems
-
-2. **Precise Execution Time Measurement**
-   - Replaced approximate calculation with `performance.now()`
-   - Provides accurate millisecond-precision runtime statistics
-   - Helps identify performance bottlenecks in code
-
-3. **Enhanced Security Documentation**
-   - Added detailed security warnings and limitations
-   - Documented best practices for safe usage
-   - Clarified threat model and recommended mitigations
-
----
-
-## Adding New Languages
-
-Edit `server/languages/config.js`:
-
+1. Edit `server/languages/config.js`
+2. Add language configuration:
 ```javascript
-export const LANGUAGES = {
-  // ... existing languages
-
-  rust: {
-    id: 'rust',
-    name: 'Rust',
-    extension: '.rs',
-    needsCompilation: true,
-    compile: 'rustc {file} -o {executable}',
-    run: './{executable}',
-    executable: 'main',
-    errorPatterns: [/error:/i]
-  }
-};
+newlang: {
+  name: 'New Language',
+  extension: '.ext',
+  needsCompilation: false,
+  compile: null,
+  run: 'interpreter {file}'
+}
 ```
 
-No changes to executor logic required.
+---
+
+## ✅ Testing
+
+See [TESTING.md](TESTING.md) for:
+- Edge case scenarios
+- Security tests
+- Performance benchmarks
+- Manual testing checklist
 
 ---
 
-## Documentation
+## 🚧 Known Issues
 
-- [Architecture Overview](docs/ARCHITECTURE.md)
-- [Execution Lifecycle](docs/EXECUTION_LIFECYCLE.md)
-- [Testing Guide](docs/TESTING.md)
-
----
-
-## Roadmap
-
-- [ ] Browser extension (Chrome/Firefox) - **In Progress**
-- [ ] VS Code extension
-- [ ] Docker sandboxing with resource limits
-- [ ] Custom checkers for special judge problems
-- [ ] Stress testing engine
-- [ ] Interactive problems support
-- [ ] Multi-test file support
-- [ ] Parallel test execution
+| Issue | Impact | Workaround |
+|-------|--------|------------|
+| Memory limits not enforced on Windows | Low | Use Linux/Mac for strict limits |
+| Java warm-up effect | Low | First run may be slower |
+| CF DOM changes break scraper | Medium | Update selectors in `codeforces.js` |
 
 ---
 
-## Contributing
+## 💯 Roadmap
+
+### v1.1 (Near-term)
+- [ ] Docker sandboxing
+- [ ] Stress testing mode
+- [ ] More platforms (AtCoder, LeetCode)
+
+### v2.0 (Long-term)
+- [ ] Custom checkers
+- [ ] Interactive problems
+- [ ] Code analysis/hints
+- [ ] Team collaboration
+
+---
+
+## 📜 License
+
+MIT License - See [LICENSE](LICENSE) file
+
+---
+
+## 👤 Author
+
+**Ayush Tiwari**
+- GitHub: [@ayushtiwari18](https://github.com/ayushtiwari18)
+- Project: [cp-judge](https://github.com/ayushtiwari18/cp-judge)
+
+---
+
+## 🚀 Contributing
 
 Contributions welcome! Please:
 1. Fork the repository
 2. Create a feature branch
-3. Follow existing code style
-4. Add tests for new features
+3. Make your changes
+4. Add tests
 5. Submit a pull request
 
 ---
 
-## License
+## 🔗 Resources
 
-MIT License - see [LICENSE](LICENSE) for details
-
----
-
-## Author
-
-**Ayush Tiwari**  
-[GitHub](https://github.com/ayushtiwari18) • [Portfolio](https://ayusht.netlify.app/)
+- [Codeforces](https://codeforces.com/)
+- [CPH Judge (Inspiration)](https://github.com/agrawal-d/cph)
+- [Competitive Programming](https://cp-algorithms.com/)
 
 ---
 
-## Acknowledgments
+<div align="center">
 
-Inspired by:
-- [Competitive Programming Helper (CPH)](https://github.com/agrawal-d/cph)
-- [Codeforces](https://codeforces.com)
-- [LeetCode](https://leetcode.com)
+**Star ⭐ this repo if you found it useful!**
 
----
-
-## Changelog
-
-### v1.0.1 (January 11, 2026)
-- Fixed output normalization for case-sensitive comparison
-- Added precise execution time measurement with performance.now()
-- Enhanced security documentation with detailed warnings
-- Improved runner logging for better debugging
-
-### v1.0.0 (January 11, 2026)
-- Initial production release
-- Multi-language support (C++, Java, Python, JavaScript)
-- Deterministic verdict system
-- Isolated workspace execution
-- Comprehensive test suite
+</div>
