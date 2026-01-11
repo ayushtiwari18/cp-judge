@@ -6,7 +6,7 @@
  * - Manage workspace creation/cleanup
  * - Handle compilation
  * - Run test cases sequentially
- * - Return aggregated results with summary
+ * - Return aggregated results with comprehensive metrics
  */
 
 import { getLanguage } from '../languages/config.js';
@@ -22,9 +22,10 @@ import { info, warn, error as logError } from '../utils/logger.js';
  * @param {string} code - Source code
  * @param {Array} testCases - Array of test case objects
  * @param {number} timeLimit - Time limit in milliseconds
+ * @param {number} memoryLimit - Memory limit in MB
  * @returns {Promise<object>} Execution results
  */
-export async function executeCode(languageId, code, testCases, timeLimit = 2000) {
+export async function executeCode(languageId, code, testCases, timeLimit = 2000, memoryLimit = 256) {
   let workspacePath = null;
 
   try {
@@ -62,7 +63,8 @@ export async function executeCode(languageId, code, testCases, timeLimit = 2000)
           totalTests: testCases.length,
           passed: 0,
           failed: testCases.length,
-          totalTime: 0
+          totalTime: 0,
+          peakMemory: 0
         }
       };
     }
@@ -72,6 +74,7 @@ export async function executeCode(languageId, code, testCases, timeLimit = 2000)
     // Run test cases
     const results = [];
     let totalTime = 0;
+    let peakMemory = 0;
     
     for (let i = 0; i < testCases.length; i++) {
       const testCase = testCases[i];
@@ -90,6 +93,7 @@ export async function executeCode(languageId, code, testCases, timeLimit = 2000)
       const verdict = determineVerdict(executionResult, testCase.expectedOutput);
       
       totalTime += executionResult.executionTime || 0;
+      peakMemory = Math.max(peakMemory, executionResult.memory?.peak || 0);
 
       results.push({
         testCase: i + 1,
@@ -99,14 +103,15 @@ export async function executeCode(languageId, code, testCases, timeLimit = 2000)
         expectedOutput: verdict.expectedOutput,
         stderr: verdict.stderr,
         executionTime: executionResult.executionTime || 0,
+        memory: executionResult.memory || { peak: 0, average: 0, unit: 'MB' },
         diff: verdict.diff || null  // Include diff for WA cases
       });
 
-      info(`Test case ${i + 1}: ${verdict.verdict} (${executionResult.executionTime || 0}ms)`);
+      info(`Test case ${i + 1}: ${verdict.verdict} (${executionResult.executionTime || 0}ms, ${executionResult.memory?.peak || 0}MB)`);
     }
 
     // Calculate summary
-    const summary = calculateSummary(results, totalTime);
+    const summary = calculateSummary(results, totalTime, peakMemory);
     
     // Log final summary
     logSummary(summary);
@@ -135,9 +140,10 @@ export async function executeCode(languageId, code, testCases, timeLimit = 2000)
  * Calculate summary statistics from results
  * @param {Array} results - Test case results
  * @param {number} totalTime - Total execution time
+ * @param {number} peakMemory - Peak memory usage
  * @returns {object} Summary statistics
  */
-function calculateSummary(results, totalTime) {
+function calculateSummary(results, totalTime, peakMemory) {
   const verdictCounts = {
     [VERDICTS.AC]: 0,
     [VERDICTS.WA]: 0,
@@ -177,7 +183,9 @@ function calculateSummary(results, totalTime) {
     firstFailure: firstFailure,
     verdictBreakdown: verdictCounts,
     totalTime: totalTime,
-    avgTime: total > 0 ? Math.round(totalTime / total) : 0
+    avgTime: total > 0 ? Math.round(totalTime / total) : 0,
+    peakMemory: peakMemory,
+    avgMemory: total > 0 ? Math.round(results.reduce((sum, r) => sum + (r.memory?.peak || 0), 0) / total * 100) / 100 : 0
   };
 }
 
@@ -198,5 +206,7 @@ function logSummary(summary) {
   
   console.log(`Total Time: ${summary.totalTime}ms`);
   console.log(`Average Time: ${summary.avgTime}ms`);
+  console.log(`Peak Memory: ${summary.peakMemory}MB`);
+  console.log(`Average Memory: ${summary.avgMemory}MB`);
   console.log('━'.repeat(50) + '\n');
 }
