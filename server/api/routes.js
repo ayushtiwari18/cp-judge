@@ -3,35 +3,96 @@
  * 
  * ENDPOINTS:
  * - POST /run - Execute code with test cases
- * - GET /health - Health check
+ * - GET /health - Health check with compiler availability
  * - GET /languages - List supported languages
  */
 
 import express from 'express';
 import { executeCode } from './executor.js';
 import { getSupportedLanguages, isLanguageSupported } from '../languages/config.js';
+import { exec } from 'child_process';
+import { promisify } from 'util';
 
+const execAsync = promisify(exec);
 const router = express.Router();
 
 /**
- * Health check endpoint
+ * Check if a command exists on the system
+ * @param {string} command - Command to check
+ * @returns {Promise<boolean>} True if command exists
  */
-router.get('/health', (req, res) => {
+async function commandExists(command) {
+  try {
+    if (process.platform === 'win32') {
+      await execAsync(`where ${command}`);
+    } else {
+      await execAsync(`which ${command}`);
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Health check endpoint with compiler availability
+ * Returns detailed system status
+ */
+router.get('/health', async (req, res) => {
+  const warnings = [];
+  
+  // Check compiler/interpreter availability
+  const compilerChecks = {
+    cpp: await commandExists('g++'),
+    java: await commandExists('javac'),
+    python: await commandExists('python3') || await commandExists('python'),
+    javascript: await commandExists('node')
+  };
+
+  // Generate warnings for missing compilers
+  if (!compilerChecks.cpp) warnings.push('C++ compiler (g++) not found');
+  if (!compilerChecks.java) warnings.push('Java compiler (javac) not found');
+  if (!compilerChecks.python) warnings.push('Python 3 not found');
+  if (!compilerChecks.javascript) warnings.push('Node.js not found');
+
+  const status = warnings.length === 4 ? 'critical' : 
+                 warnings.length > 0 ? 'degraded' : 'ok';
+
   res.json({
-    status: 'ok',
+    status: status,
     timestamp: new Date().toISOString(),
-    service: 'CP Judge Local'
+    service: 'CP Judge Local',
+    version: '1.0.0',
+    compilers: compilerChecks,
+    warnings: warnings,
+    platform: process.platform,
+    nodeVersion: process.version
   });
 });
 
 /**
- * List supported languages
+ * List supported languages with availability status
  */
-router.get('/languages', (req, res) => {
+router.get('/languages', async (req, res) => {
   const languages = getSupportedLanguages();
+  
+  // Check which languages are actually usable
+  const availability = {
+    cpp: await commandExists('g++'),
+    java: await commandExists('javac'),
+    python: await commandExists('python3') || await commandExists('python'),
+    javascript: await commandExists('node')
+  };
+
+  const languageDetails = languages.map(lang => ({
+    id: lang,
+    available: availability[lang] || false
+  }));
+
   res.json({
-    languages: languages,
-    count: languages.length
+    languages: languageDetails,
+    count: languages.length,
+    availableCount: languageDetails.filter(l => l.available).length
   });
 });
 
@@ -103,6 +164,21 @@ router.post('/run', async (req, res) => {
           error: `Test case ${i + 1} missing input or expectedOutput`
         });
       }
+    }
+
+    // Validation: Reasonable limits
+    if (testCases.length > 50) {
+      return res.status(400).json({
+        success: false,
+        error: 'Maximum 50 test cases allowed per request'
+      });
+    }
+
+    if (code.length > 1024 * 64) { // 64KB
+      return res.status(400).json({
+        success: false,
+        error: 'Code size exceeds maximum (64KB)'
+      });
     }
 
     // Execute code
