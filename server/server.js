@@ -7,11 +7,17 @@
  * PORTS:
  * - Default: 3000
  * - Configurable via PORT environment variable
+ * 
+ * STARTUP:
+ * - Cleans stale workspaces from previous runs
+ * - Initializes Express with CORS
+ * - Starts listening on configured port
  */
 
 import express from 'express';
 import cors from 'cors';
 import apiRoutes from './api/routes.js';
+import { cleanupStaleWorkspaces } from './utils/fileSystem.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -66,19 +72,44 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  console.log('  CP JUDGE LOCAL SERVER');
-  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  console.log(`  Status: RUNNING`);
-  console.log(`  Port: ${PORT}`);
-  console.log(`  URL: http://localhost:${PORT}`);
-  console.log(`  Health: http://localhost:${PORT}/api/health`);
-  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  console.log('  Supported Languages: C++, Java, Python, JavaScript');
-  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-});
+/**
+ * Startup sequence:
+ * 1. Clean stale workspaces
+ * 2. Start server
+ * 3. Display ready message
+ */
+async function startServer() {
+  try {
+    // Clean stale workspaces from previous runs
+    console.log('\n[STARTUP] Cleaning stale workspaces...');
+    const cleanedCount = await cleanupStaleWorkspaces();
+    
+    // Start server
+    app.listen(PORT, () => {
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('  CP JUDGE LOCAL SERVER');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log(`  Status: RUNNING`);
+      console.log(`  Port: ${PORT}`);
+      console.log(`  URL: http://localhost:${PORT}`);
+      console.log(`  Health: http://localhost:${PORT}/api/health`);
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('  Supported Languages: C++, Java, Python, JavaScript');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      if (cleanedCount > 0) {
+        console.log(`  Cleaned ${cleanedCount} stale workspace(s) on startup`);
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      }
+      console.log('');
+    });
+  } catch (error) {
+    console.error('[STARTUP ERROR] Failed to start server:', error);
+    process.exit(1);
+  }
+}
+
+// Start server with cleanup
+startServer();
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
